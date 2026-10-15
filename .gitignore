@@ -9,6 +9,7 @@ release/
 .env
 .env.*
 !.env.production.example
+!.env.oracle.example
 *.sqlite
 *.sqlite-*
 *.pem

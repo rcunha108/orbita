@@ -1,0 +1,13 @@
+{
+  "passed": [
+    "Compose configuration validates with fixture variables",
+    "Application healthcheck reaches healthy state",
+    "Registration and Secure cookies work through the composed backend",
+    "Non-root application can write to the named volume",
+    "Account and session persist after Compose restart"
+  ],
+  "oracleVMProvisioned": false,
+  "publicHTTPSValidated": false,
+  "livekitCloudAuthenticated": false,
+  "crossDeviceMediaValidated": false
+}
