@@ -23,7 +23,8 @@
     "dev:turn": "node scripts/turn-dev.mjs",
     "build:windows": "npm run build && node scripts/build-windows.mjs",
     "windows:tools": "bash scripts/install-windows-tools.sh",
-    "test:windows-package": "tsx tests/windows-package.ts"
+    "test:windows-package": "tsx tests/windows-package.ts",
+    "media:check": "node scripts/check-livekit.mjs"
   },
   "dependencies": {
     "livekit-client": "2.22.4",

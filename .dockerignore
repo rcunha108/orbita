@@ -1,0 +1,15 @@
+.git
+.data
+.tools
+.test-artifacts
+node_modules
+dist
+server-dist
+release
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+*.pem
+*.key
+*.log

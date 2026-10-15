@@ -1,0 +1,15 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    "Production container serves the compiled frontend and API; a URL without credentials does not activate media.",
+    "Non-root server can register an account, set a Secure cookie, persist a membership/message and serve an authenticated Engine.IO handshake.",
+    "Database and session persist across a container restart on the mounted volume.",
+    "Connection check refuses missing credentials without reporting a false success.",
+    "Runtime runs without root and excludes development media files and databases."
+  ],
+  "livekitPublicHTTPSStatus": 200,
+  "cloudAuthenticationTested": false,
+  "publicDeploymentTested": false,
+  "crossDeviceMediaTested": false
+}

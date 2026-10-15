@@ -8,6 +8,7 @@ server-dist/
 release/
 .env
 .env.*
+!.env.production.example
 *.sqlite
 *.sqlite-*
 *.pem

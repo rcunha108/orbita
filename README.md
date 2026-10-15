@@ -6,6 +6,8 @@ O foco desta entrega é **descoberta de servidores e canais**, conforme o escopo
 
 ## Executar
 
+Para conectar pessoas em computadores diferentes: [hospedar o backend e configurar LiveKit Cloud](docs/livekit-cloud.md).
+
 **Windows:** [baixe o instalador de 64 bits na release v0.1.0](https://github.com/rcunha108/orbita/releases/tag/v0.1.0). Ele inclui o runtime e permite abrir o aplicativo pelo atalho, no navegador. [Instalação, limites e geração do EXE](docs/windows.md). O modo local mantém os dados no computador; para conversar entre computadores e usar mídia, conecte a um servidor compartilhado. O instalador ainda não possui assinatura digital nem validação de instalação em Windows real.
 
 Requer Node.js 24.15 ou superior com `node:sqlite` e FTS5; validado em Node.js 24.19.0 e npm 11.9.0. Use o diretório `/workspace/orbita` neste ambiente.
