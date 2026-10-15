@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "platform": "win32-x64",
+  "node": "24.18.0",
+  "runtimeArchiveSHA256": "0ae68406b42d7725661da979b1403ec9926da205c6770827f33aac9d8f26e821",
+  "installerSHA256": "7bebd09311fefb632d15d7137e6a51ee753596b8c003cdcc56ee7f18f9ad297d",
+  "signed": false,
+  "builtOn": "linux",
+  "windowsRuntimeValidated": false,
+  "files": {
+    "LEIA-ME.txt": "fab3b6ede0a0828f24786f39fb2c1cf101a31bca2b3b36c75e815d360923059b",
+    "NODE-LICENSE.txt": "d9c4eeda951d6d08f4aa1316b61aafcf67e6da5f79b18f8edeb56fa6abdc038c",
+    "Orbita.exe": "e904836187f3fe4a7949893bcc7a3f66368077001624c49e0331bdf1ff9a3767",
+    "THIRD-PARTY-NOTICES.txt": "90e428bb0b33a1a378b41472fe6f671000f94c4d00ddc50e97029c8b4967e9b6",
+    "dist/assets/MediaPanel-BibPPLdk.js": "0190f4d0e4b05b1249eac211e5eb6a6cee22ee84203ca4199e0c0db093300035",
+    "dist/assets/index-BZIuIuy_.css": "20d5697ee822735e36327c1094febbd07e77ac05e531ec44c541f83e29f884dd",
+    "dist/assets/index-B_zhZIhZ.js": "0aca49b869f4ad2fe4394946b64be4008f81124427ab4b9f12ef2cc8a8910b00",
+    "dist/index.html": "24d405f00d6186ee98f461cc724b2ef7f2a0058f3f2707411d73f866cf0c97e1",
+    "node.exe": "9a4eb5f1c29c6a2e93852ead46b999e284a6a5ca8bab4d4e241d587d025a52de",
+    "orbita.cjs": "9c8e928b06bd78fc18135dab2e9cb374910b5a8ae3b1d1dc1eb1840b28fdd2be",
+    "orbita.ico": "eac1735f9dff11f6bc599e3b90704ae50842ac8a2a0b1112d217462c61a26540"
+  }
+}
