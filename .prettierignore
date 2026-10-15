@@ -1,0 +1,11 @@
+node_modules
+dist
+server-dist
+.data
+.test-artifacts
+package-lock.json
+.tools
+release
+desktop/*.c
+desktop/*.nsi
+desktop/*.txt

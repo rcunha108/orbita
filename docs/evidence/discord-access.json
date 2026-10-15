@@ -1,0 +1,17 @@
+[
+  {
+    "url": "https://discord.com",
+    "attempted_at": "2026-10-15T03:10:19.685651+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  },
+  {
+    "url": "https://discord.com/servers",
+    "attempted_at": "2026-10-15T03:10:19.684322+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  },
+  {
+    "url": "https://support.discord.com/hc/en-us/articles/360023968311-Server-Discovery",
+    "attempted_at": "2026-10-15T03:10:19.682872+00:00",
+    "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+  }
+]

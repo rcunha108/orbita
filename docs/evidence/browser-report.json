@@ -1,0 +1,20 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "browser": "154.0.8037.57",
+  "checks": [
+    "Initial discovery: six cards, twelve total communities, original artwork.",
+    "Accents, prefix search and page reset after a changed query.",
+    "Category facets and separate channel search resolve real API results.",
+    "Empty state recovery and sorting by member count.",
+    "An obsolete delayed response does not overwrite newer search results.",
+    "Network error is actionable and retry recovers the interface.",
+    "Join gates message composition; persisted text is escaped and isolated by channel.",
+    "Joined library, navigation and leaving update both sidebar and message access.",
+    "Two independent accounts receive a live message, presence and typing without reloading.",
+    "A dropped WebSocket recovers all 35 missed messages, exceeding the recent-history page.",
+    "Logout removes the active session and presence and blocks access to history.",
+    "390px mobile layout has no page overflow; information dialog and channels work."
+  ],
+  "pageErrors": []
+}

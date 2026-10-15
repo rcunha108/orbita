@@ -1,0 +1,451 @@
+.artwork {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+.art-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(#fff1 1px, transparent 1px), linear-gradient(90deg, #fff1 1px, transparent 1px);
+  background-size: 27px 27px;
+  opacity: 0.25;
+}
+.artwork-pixel,
+.artwork-arena {
+  background: linear-gradient(150deg, #7d79b3, #48435d);
+}
+.pixel-platform {
+  position: absolute;
+  transform: rotate(-27deg) skew(22deg);
+  box-shadow: -12px 14px 0 #3d465d;
+  border: 1px solid #e2e9fa3b;
+}
+.platform-one {
+  width: 100px;
+  height: 57px;
+  right: 18%;
+  bottom: 8%;
+  background: #94b98a;
+  box-shadow:
+    -8px 10px 0 #52674b,
+    -16px 20px 0 #576274;
+}
+.platform-two {
+  width: 54px;
+  height: 34px;
+  left: 12%;
+  bottom: 40%;
+  background: #b2c7a3;
+  box-shadow:
+    -7px 9px 0 #63825f,
+    -14px 18px 0 #576274;
+}
+.platform-three {
+  width: 33px;
+  height: 24px;
+  right: 18%;
+  top: 12%;
+  background: #a6baa5;
+  box-shadow: -5px 7px 0 #5c796b;
+}
+.pixel-sun {
+  width: 32px;
+  height: 32px;
+  background: #e6d5af;
+  position: absolute;
+  top: 24%;
+  left: 46%;
+  box-shadow: 0 0 0 7px #d8c4aa1a;
+}
+.pixel-spark {
+  position: absolute;
+  color: #eaded7;
+  font-size: 20px;
+}
+.spark-one {
+  left: 25%;
+  top: 15%;
+}
+.spark-two {
+  right: 9%;
+  bottom: 18%;
+  font-size: 14px;
+}
+.artwork-arena {
+  background: linear-gradient(130deg, #854f69, #433744);
+}
+.artwork-arena .pixel-platform {
+  background: #de9b9f;
+  box-shadow:
+    -8px 10px 0 #a65b6c,
+    -16px 20px 0 #573f59;
+}
+.artwork-terminal,
+.artwork-web {
+  background: linear-gradient(130deg, #4b6658, #243b37);
+}
+.code-window {
+  position: absolute;
+  left: 17%;
+  top: 18%;
+  background: #172b2d;
+  border: 1px solid #9bbd9c66;
+  border-radius: 7px;
+  transform: rotate(-6deg);
+  width: 65%;
+  padding: 10px 12px 12px;
+  box-shadow: 12px 12px 0 #1c302d3b;
+}
+.window-dots {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 9px;
+}
+.window-dots i {
+  height: 4px;
+  width: 4px;
+  border-radius: 50%;
+  background: #9daa8c;
+}
+.window-dots i:nth-child(2) {
+  background: #bfaa81;
+}
+.window-dots i:nth-child(3) {
+  background: #ba8e81;
+}
+.code-line {
+  font:
+    9px/1.7 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  color: #a7bda9;
+}
+.code-line em {
+  font-style: normal;
+  color: #d3c2e0;
+}
+.code-line.indent {
+  padding-left: 13px;
+}
+.code-line span {
+  color: #c8e19b;
+}
+.code-line b {
+  margin-left: 5px;
+  color: var(--green);
+}
+.code-symbol {
+  position: absolute;
+  font:
+    700 28px ui-monospace,
+    monospace;
+  color: #c9e899;
+  right: 4%;
+  bottom: 5%;
+  transform: rotate(12deg);
+  text-shadow: 2px 3px #223e30;
+}
+.artwork-web {
+  background: linear-gradient(130deg, #39756d, #294749);
+}
+.artwork-studio,
+.artwork-photo {
+  background: #cb9c87;
+}
+.studio-circle {
+  width: 84px;
+  height: 84px;
+  background: #514b78;
+  border-radius: 50%;
+  position: absolute;
+  left: 12%;
+  top: 21%;
+  box-shadow: inset 0 0 0 16px #a99ac5;
+}
+.studio-square {
+  width: 72px;
+  height: 72px;
+  background: #e9c4a1;
+  position: absolute;
+  right: 10%;
+  bottom: 4%;
+  transform: rotate(17deg);
+  box-shadow: inset 0 0 0 14px #d5a571;
+}
+.studio-arch {
+  height: 102px;
+  width: 65px;
+  border-radius: 50px 50px 0 0;
+  background: #b65d4c;
+  position: absolute;
+  left: 44%;
+  top: -3%;
+  transform: rotate(20deg);
+  box-shadow: inset 0 0 0 15px #d6a58c;
+}
+.studio-dot {
+  width: 23px;
+  height: 23px;
+  background: #efe1a6;
+  border-radius: 50%;
+  position: absolute;
+  right: 12%;
+  top: 15%;
+}
+.artwork-photo {
+  background: #ad8c74;
+}
+.artwork-photo .studio-circle {
+  background: #493e37;
+  box-shadow: inset 0 0 0 16px #cfbea4;
+}
+.artwork-photo .studio-arch {
+  background: #677f75;
+}
+.artwork-music,
+.artwork-sound {
+  background: linear-gradient(140deg, #a28bae, #514060);
+}
+.record {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, #292335 0px, #292335 3px, #3d334b 4px, #292335 5px);
+  position: absolute;
+  left: 17%;
+  top: 15%;
+  transform: rotate(-25deg);
+  box-shadow: 5px 8px 18px #2a1b3a50;
+}
+.record > div {
+  position: absolute;
+  inset: 35%;
+  background: #c7b4dc;
+  border-radius: 50%;
+}
+.record > i {
+  position: absolute;
+  inset: 47%;
+  background: #3b2b48;
+  border-radius: 50%;
+}
+.music-note {
+  position: absolute;
+  right: 17%;
+  top: 6%;
+  font-size: 64px;
+  transform: rotate(15deg);
+  color: #e3c9dc;
+  text-shadow: 3px 5px #5d3d74;
+}
+.music-bars {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  position: absolute;
+  right: 4%;
+  bottom: 10px;
+}
+.music-bars > i {
+  display: block;
+  width: 3px;
+  background: #d4c1e3;
+  opacity: 0.6;
+  border-radius: 4px;
+}
+.artwork-sound {
+  background: linear-gradient(130deg, #ab6b8d, #68435d);
+}
+.artwork-cosmos {
+  background: linear-gradient(130deg, #3c626e, #233b4d);
+}
+.planet {
+  width: 83px;
+  height: 83px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 28% 20%, #b9d8c8, #6e9d9d 60%, #487775);
+  position: absolute;
+  left: 32%;
+  top: 22%;
+  transform: rotate(-28deg);
+  box-shadow: inset -10px -8px 18px #366871;
+}
+.planet > div {
+  position: absolute;
+  width: 160px;
+  height: 36px;
+  border: 8px solid #b5cbd299;
+  border-radius: 50%;
+  left: -40px;
+  top: 25px;
+  transform: rotate(-6deg);
+  border-top-color: #89a9b0;
+  box-shadow: 0 0 0 2px #374f5d44;
+}
+.planet-moon {
+  position: absolute;
+  background: #c0b895;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  right: 14%;
+  top: 18%;
+  box-shadow: inset -3px -3px #8f9b96;
+}
+.space-stars {
+  position: absolute;
+  inset: 5%;
+  font-size: 23px;
+  color: #abc5cf;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.space-stars span:nth-child(2) {
+  margin-bottom: 65px;
+}
+.space-stars span:nth-child(4) {
+  align-self: flex-end;
+  font-size: 10px;
+  margin-bottom: 10px;
+}
+.artwork-cozy,
+.artwork-words {
+  background: linear-gradient(120deg, #c7b48a, #8b9b7b);
+}
+.cozy-book {
+  position: absolute;
+  width: 93px;
+  height: 113px;
+  left: 23%;
+  top: 18%;
+  border-radius: 3px 8px 8px 3px;
+  background: #eee0b8;
+  transform: rotate(-13deg);
+  box-shadow:
+    -4px 0 #82795c,
+    3px 4px #d3c69e,
+    7px 7px #59674d44;
+}
+.cozy-book span {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #6d7856;
+  margin: 22px 10px;
+  letter-spacing: -0.5px;
+}
+.cozy-cup {
+  position: absolute;
+  right: 15%;
+  bottom: 14%;
+  width: 47px;
+  height: 44px;
+  border-radius: 5px 5px 20px 20px;
+  background: #9c7559;
+  box-shadow: inset 0 5px #6b5042;
+}
+.cozy-cup:after {
+  content: '';
+  position: absolute;
+  right: -13px;
+  top: 9px;
+  width: 15px;
+  height: 18px;
+  border: 5px solid #9c7559;
+  border-radius: 50%;
+}
+.cozy-leaf {
+  position: absolute;
+  width: 36px;
+  height: 60px;
+  background: #577458;
+  border-radius: 80% 0 80% 0;
+  right: 15%;
+  top: -17px;
+  transform: rotate(25deg);
+}
+.artwork-words {
+  background: linear-gradient(135deg, #99aa89, #557c6a);
+}
+.artwork-words .cozy-book {
+  background: #d5dbac;
+}
+.artwork-outdoor {
+  background: linear-gradient(120deg, #8ab8ad, #5b8c8b);
+}
+.mountain {
+  width: 120px;
+  height: 120px;
+  position: absolute;
+  transform: rotate(45deg);
+  bottom: -40%;
+  background: #567365;
+  left: 8%;
+  border-radius: 8px;
+}
+.mountain-two {
+  width: 160px;
+  height: 160px;
+  left: 40%;
+  bottom: -72%;
+  background: #315d53;
+}
+.outdoor-sun {
+  position: absolute;
+  right: 20%;
+  top: 13%;
+  width: 35px;
+  height: 35px;
+  background: #e6ce8c;
+  border-radius: 50%;
+}
+.compact .code-line {
+  font-size: 7px;
+}
+.compact .code-window {
+  top: 8%;
+  padding: 7px 10px;
+}
+.compact .window-dots {
+  margin-bottom: 3px;
+}
+.compact .record {
+  width: 85px;
+  height: 85px;
+  top: 15%;
+}
+.compact .music-note {
+  font-size: 46px;
+}
+.compact .cozy-book {
+  width: 70px;
+  height: 90px;
+}
+.compact .cozy-book span {
+  font-size: 10px;
+}
+.compact .studio-circle {
+  width: 60px;
+  height: 60px;
+}
+.compact .studio-square {
+  width: 53px;
+  height: 53px;
+}
+.compact .planet {
+  width: 65px;
+  height: 65px;
+  top: 20%;
+}
+.compact .planet > div {
+  width: 125px;
+  left: -30px;
+  top: 16px;
+  height: 33px;
+}

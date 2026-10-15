@@ -1,0 +1,50 @@
+{
+  "name": "orbita",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "dev": "node scripts/prepare-media.mjs && concurrently -k -n api,web,media,turn \"npm:dev:api\" \"npm:dev:web\" \"npm:dev:media\" \"npm:dev:turn\"",
+    "dev:api": "node scripts/dev-api.mjs",
+    "dev:web": "vite --host 0.0.0.0",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
+    "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
+    "start": "node server-dist/server/main.js",
+    "test": "tsx --test server/*.test.ts",
+    "test:e2e": "tsx tests/browser.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "dev:media": "node scripts/livekit-dev.mjs",
+    "media:install": "node scripts/install-livekit.mjs",
+    "test:media": "tsx tests/media.ts",
+    "dev:turn": "node scripts/turn-dev.mjs",
+    "build:windows": "npm run build && node scripts/build-windows.mjs",
+    "windows:tools": "bash scripts/install-windows-tools.sh",
+    "test:windows-package": "tsx tests/windows-package.ts"
+  },
+  "dependencies": {
+    "livekit-client": "2.22.4",
+    "livekit-server-sdk": "2.19.1",
+    "lucide-react": "0.468.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "socket.io": "4.8.1",
+    "socket.io-client": "4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "5.0.4",
+    "concurrently": "9.2.1",
+    "esbuild": "0.25.12",
+    "playwright-core": "1.58.2",
+    "prettier": "3.6.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vite": "7.1.9"
+  }
+}

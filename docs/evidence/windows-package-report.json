@@ -1,0 +1,13 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "host": "linux",
+  "windowsInstallExecuted": false,
+  "checks": [
+    "Bundled server serves the production interface and ignores inherited development media credentials.",
+    "Registration, authenticated WebSocket, membership and message creation work without node_modules beside the payload.",
+    "Opening a second instance reuses the existing server.",
+    "Stopping and restarting preserve the SQLite account, membership, session and message.",
+    "Remote HTTPS mode does not start a local backend; insecure remote URLs are rejected."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "passed": 5,
+  "failed": 0,
+  "browser": "154.0.8037.57",
+  "livekit": "1.13.10",
+  "inputSources": {
+    "microphone": "Chromium synthetic device",
+    "display": "Chromium synthetic display-capture pattern"
+  },
+  "checks": [
+    "Two real WebRTC clients publish synthetic microphone audio and receive it through LiveKit and TURN.",
+    "Mute and unmute update the published microphone track.",
+    "The browser display-capture API publishes synthetic test frames that are decoded by the receiver; stopping removes the track.",
+    "Direct call invitations can be declined or accepted; accepted calls use a separate two-person media room and hangup ends both sides.",
+    "Leaving a community revokes the active media participant at the SFU, as well as chat access."
+  ],
+  "pageErrors": []
+}

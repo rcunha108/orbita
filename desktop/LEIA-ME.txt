@@ -1,0 +1,31 @@
+ÓRBITA 0.1.0 — WINDOWS 64 BITS
+
+Requisitos: Windows 10/11 x64 e um navegador atualizado (Edge ou Chrome).
+Não é necessário instalar Node.js, Docker ou ferramentas de desenvolvimento.
+
+Abra o atalho Órbita. O aplicativo inicia um servidor privado neste computador
+e abre o navegador. Crie sua conta na primeira utilização. Não há conta padrão.
+Contas e mensagens ficam em %LOCALAPPDATA%\Orbita\orbita.sqlite.
+Fechar a aba não encerra o servidor. Use “Encerrar Órbita” no menu Iniciar.
+A desinstalação preserva os dados. Não apague essa pasta sem fazer backup.
+
+Esta edição local permite usar e avaliar o chat no próprio computador.
+Cada computador tem seu próprio banco: instalações locais não conversam entre si.
+Voz, ligações e compartilhamento de tela exigem um servidor compartilhado
+com HTTPS, LiveKit e TURN configurados; esses serviços não estão neste instalador.
+
+Para conectar a um servidor Órbita já publicado, crie o arquivo
+%LOCALAPPDATA%\Orbita\server.json com este conteúdo, trocando pelo endereço real:
+{"serverUrl":"https://seu-servidor.example"}
+Encerre e reabra o Órbita. Nesse modo, os dados ficam no servidor escolhido.
+Para voltar ao modo local, remova esse arquivo e reabra o aplicativo.
+Nunca coloque chaves ou senhas nesse arquivo.
+
+Falhas de inicialização: consulte %LOCALAPPDATA%\Orbita\startup-error.log.
+O servidor local usa apenas 127.0.0.1, porta 31043.
+
+Este instalador não possui assinatura digital de editor.
+Gerado em Linux; a instalação e execução no Windows precisam ser validadas
+em um computador Windows antes de distribuição pública.
+
+Licenças de terceiros: NODE-LICENSE.txt e THIRD-PARTY-NOTICES.txt.
