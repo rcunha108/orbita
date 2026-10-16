@@ -24,7 +24,7 @@ class AccessError(Exception):
     pass
 
 
-def oci(*arguments):
+def oci(*arguments, allow_empty_list=False, allow_empty_response=False):
     result = subprocess.run(
         ['oci', *arguments, '--output', 'json'],
         text=True, capture_output=True, timeout=120,
@@ -32,7 +32,28 @@ def oci(*arguments):
     if result.returncode:
         # No private key or credential value is supplied to the OCI CLI.
         raise AccessError('A OCI recusou o comando: ' + result.stderr.strip()[:1400])
-    return json.loads(result.stdout)['data']
+    label = ' '.join(arguments[:3])
+    output = result.stdout.strip()
+    if not output:
+        # Some OCI CLI list commands print nothing when there are no resources.
+        if allow_empty_list:
+            return []
+        if allow_empty_response:
+            return {}
+        raise AccessError(f'A OCI retornou resposta vazia em: {label}.')
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError:
+        raise AccessError(f'A OCI retornou uma resposta fora do formato JSON em: {label}.') from None
+    if not isinstance(payload, dict) or 'data' not in payload:
+        raise AccessError(f'A OCI retornou um formato inesperado em: {label}.')
+    if payload['data'] is None:
+        if allow_empty_list:
+            return []
+        if allow_empty_response:
+            return {}
+        raise AccessError(f'A OCI retornou dados ausentes em: {label}.')
+    return payload['data']
 
 
 def records(value):
@@ -49,7 +70,7 @@ def resolve_instance(resource_id):
     vnic = oci('network', 'vnic', 'get', '--vnic-id', resource_id)
     attachments = records(oci('compute', 'vnic-attachment', 'list',
                               '--compartment-id', vnic['compartment-id'],
-                              '--vnic-id', resource_id, '--all'))
+                              '--vnic-id', resource_id, '--all', allow_empty_list=True))
     matches = [item for item in attachments if item.get('lifecycle-state') == 'ATTACHED'
                and item.get('vnic-id') == resource_id and item.get('instance-id')]
     if len(matches) != 1:
@@ -89,7 +110,7 @@ def enable_bastion(instance_id, instance):
     compartment = instance['compartment-id']
     arguments = ('instance-agent', 'plugin', 'list', '--instanceagent-id', instance_id,
                  '--compartment-id', compartment, '--all')
-    plugins = records(oci(*arguments))
+    plugins = records(oci(*arguments, allow_empty_list=True))
     bastion = next((plugin for plugin in plugins if plugin.get('name') == 'Bastion'), None)
     if bastion is None or bastion.get('status') == 'NOT_SUPPORTED':
         raise AccessError('A imagem nao informou suporte ao plugin Bastion. Nenhum bastion foi criado.')
@@ -113,8 +134,8 @@ def enable_bastion(instance_id, instance):
     config['pluginsConfig'] = entries
     print('Ativando apenas o plugin Bastion; as outras configuracoes do agent serao preservadas.', flush=True)
     oci('compute', 'instance', 'update', '--instance-id', instance_id,
-        '--agent-config', json.dumps(config), '--force')
-    wait_for('plugin Bastion', lambda: records(oci(*arguments)),
+        '--agent-config', json.dumps(config), '--force', allow_empty_response=True)
+    wait_for('plugin Bastion', lambda: records(oci(*arguments, allow_empty_list=True)),
              lambda items: any(item.get('name') == 'Bastion' and item.get('status') == 'RUNNING'
                                for item in items))
 
@@ -164,7 +185,8 @@ def main():
     instance = oci('compute', 'instance', 'get', '--instance-id', instance_id)
     if instance['lifecycle-state'] != 'RUNNING':
         raise AccessError('A instancia precisa estar Running.')
-    vnics = records(oci('compute', 'instance', 'list-vnics', '--instance-id', instance_id, '--all'))
+    vnics = records(oci('compute', 'instance', 'list-vnics', '--instance-id', instance_id,
+                        '--all', allow_empty_list=True))
     primary = next((vnic for vnic in vnics if (vnic.get('id') == supplied_vnic
                    if supplied_vnic else vnic.get('is-primary'))), None)
     if primary is None:
@@ -176,14 +198,18 @@ def main():
         print('Modo de consulta: nenhuma chave ou recurso foi criado. Use --connect para preparar o acesso.')
         return
     cidr = source_cidr(args.source_cidr)
+    print('Verificando plugin Bastion...', flush=True)
     enable_bastion(instance_id, instance)
     directory = Path.home() / '.ssh' / ('orbita-' + hashlib.sha256(instance_id.encode()).hexdigest()[:12])
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     directory.chmod(0o700)
+    print('Preparando chave RSA no Cloud Shell...', flush=True)
     key, public, derived = prepare_key(directory)
     compartment = instance['compartment-id']
     name = directory.name
-    bastions = records(oci('bastion', 'bastion', 'list', '--compartment-id', compartment, '--all'))
+    print('Consultando bastions existentes...', flush=True)
+    bastions = records(oci('bastion', 'bastion', 'list', '--compartment-id', compartment,
+                           '--all', allow_empty_list=True))
     candidates = [item for item in bastions if item.get('name') == name
                   and item.get('target-subnet-id') == primary['subnet-id']
                   and item.get('lifecycle-state') in {'ACTIVE', 'CREATING'}]
@@ -202,14 +228,20 @@ def main():
     if bastion.get('client-cidr-block-allow-list') != [cidr]:
         # This helper owns only its specifically named bastion; it never broadens access.
         oci('bastion', 'bastion', 'update', '--bastion-id', bastion_id,
-            '--client-cidr-list', json.dumps([cidr]), '--force')
+            '--client-cidr-list', json.dumps([cidr]), '--force', allow_empty_response=True)
         wait_for('bastion', lambda: oci('bastion', 'bastion', 'get', '--bastion-id', bastion_id),
                  lambda item: item.get('lifecycle-state') == 'ACTIVE')
     state_file = directory / 'session.json'
     fingerprint = hashlib.sha256(derived).hexdigest()
     session = None
     if state_file.exists():
-        saved = json.loads(state_file.read_text())
+        try:
+            saved = json.loads(state_file.read_text())
+        except json.JSONDecodeError:
+            print('Cache de sessao incompleto; as chaves serao preservadas e o cache sera reconstruido.', flush=True)
+            saved = {}
+        if not isinstance(saved, dict):
+            saved = {}
         if saved.get('bastion') == bastion_id and saved.get('key') == fingerprint:
             previous = oci('bastion', 'session', 'get', '--session-id', saved['session'])
             if (previous.get('bastion-id') == bastion_id
@@ -221,8 +253,10 @@ def main():
                       '--key-type', 'PUB', '--ssh-public-key-file', str(public),
                       '--target-resource-id', instance_id, '--target-os-username', 'ubuntu',
                       '--target-private-ip', primary['private-ip'], '--target-port', '22', '--session-ttl', '3600')
-        state_file.write_text(json.dumps({'bastion': bastion_id, 'session': session['id'], 'key': fingerprint}))
-        state_file.chmod(0o600)
+        temporary = state_file.with_suffix('.tmp')
+        temporary.write_text(json.dumps({'bastion': bastion_id, 'session': session['id'], 'key': fingerprint}))
+        temporary.chmod(0o600)
+        temporary.replace(state_file)
     session = wait_for('sessao SSH', lambda: oci('bastion', 'session', 'get', '--session-id', session['id']),
                        lambda item: item.get('lifecycle-state') == 'ACTIVE')
     print('Sessao pronta. A chave privada permanece neste Cloud Shell. Abrindo a VM...', flush=True)

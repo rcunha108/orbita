@@ -18,6 +18,24 @@ VNIC = 'ocid1.vnic.oc1.sa-saopaulo-1.testvnic'
 
 
 class OracleAccessTests(unittest.TestCase):
+    def test_empty_oci_lists_are_allowed_only_for_explicit_list_calls(self):
+        for output in ['', ' \n', '{"data": null}']:
+            result = subprocess.CompletedProcess([], 0, output, '')
+            with self.subTest(output=output), patch.object(ACCESS.subprocess, 'run', return_value=result):
+                self.assertEqual(ACCESS.oci('bastion', 'bastion', 'list', allow_empty_list=True), [])
+                self.assertEqual(ACCESS.oci('bastion', 'bastion', 'update', allow_empty_response=True), {})
+                with self.assertRaisesRegex(ACCESS.AccessError, 'bastion bastion get'):
+                    ACCESS.oci('bastion', 'bastion', 'get')
+
+    def test_oci_malformed_output_reports_command_without_disclosing_response(self):
+        for output in ['sensitive-response-must-not-be-disclosed', '{}', '[]']:
+            result = subprocess.CompletedProcess([], 0, output, '')
+            with self.subTest(output=output), patch.object(ACCESS.subprocess, 'run', return_value=result):
+                with self.assertRaises(ACCESS.AccessError) as raised:
+                    ACCESS.oci('bastion', 'bastion', 'list', allow_empty_list=True)
+                self.assertIn('bastion bastion list', str(raised.exception))
+                self.assertNotIn('sensitive-response', str(raised.exception))
+
     def test_vnic_lookup_accepts_only_one_attached_instance(self):
         for attachments, expected in [
             ([], None),
