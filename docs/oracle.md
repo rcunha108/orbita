@@ -18,6 +18,27 @@ O app se conecta ao LiveKit Cloud por saída HTTPS/WSS. Os navegadores também p
 
 ## 3. Preparar Docker e código
 
+### Acesso pelo Cloud Shell sem transferir chave privada
+
+Se o ambiente desta conversa não consegue abrir SSH ou os links de download da chave não funcionam, é possível usar uma **sessão Managed SSH do Oracle Bastion**. A chave é gerada diretamente no seu Cloud Shell e permanece nele; a autorização temporária na VM é feita pelo plugin Bastion, sem depender da chave que foi adicionada na criação da instância. Bastion é um serviço listado no Free Tier da Oracle; não é necessário criar outra instância, disco ou gateway pago para esse acesso. Confira os termos atuais da conta.
+
+O helper abaixo usa a autenticação da OCI CLI já disponível no Cloud Shell. Por padrão, ele consulta a VM e não cria recursos. Aceita o OCID da instância ou da VNIC. Substitua `OCID-DA-INSTANCIA-OU-VNIC` pelo identificador do console:
+
+```bash
+git clone https://github.com/rcunha108/orbita.git ~/orbita-acesso
+python3 ~/orbita-acesso/scripts/oracle-cloudshell-access.py OCID-DA-INSTANCIA-OU-VNIC --expected-public-ip 163.176.214.149
+```
+
+Para autorizar a preparação do acesso, repita o segundo comando com `--connect`. Isso ativa o plugin Bastion preservando as outras configurações do Oracle Cloud Agent, cria ou reutiliza um bastion específico dessa VM, restringe a origem ao IPv4 público atual do Cloud Shell (`/32`) e cria uma sessão de uma hora. A identificação do IPv4 usa `api.ipify.org` por HTTPS; `--source-cidr IP/32` permite informá-lo explicitamente. O SSH mantém a verificação de identidade e registra a primeira conexão em um arquivo `known_hosts` próprio.
+
+Pré-requisitos: imagem Linux com Oracle Cloud Agent e suporte ao plugin Bastion, permissões OCI para os recursos, gateway/rota já existentes e acesso TCP 22 do endereço privado do Bastion à VM. O helper não modifica Security Lists, NSGs ou o firewall. Se algum requisito estiver ausente, ele informa o erro e para; não recrie a VM nem substitua uma instância gratuita por uma paga para contornar a falha.
+
+O helper é preparação de acesso, não uma comprovação de implantação: a consulta e a conexão precisam ser executadas na sua conta Oracle. Ele não instala o Órbita automaticamente. A sessão expira após uma hora; o bastion pode ser removido pelo console quando não for mais necessário.
+
+Verificações locais do helper: `python3 -m unittest discover -s tests -p oracle_access_test.py -v`. Os testes simulam respostas da OCI para verificar a resolução da VNIC, impedir alterações no modo de consulta ou em uma VM com IP diferente, preservar configurações do agent e recusar uma origem mais ampla que `/32`. Esses testes não criam recursos nem comprovam conectividade na sua conta.
+
+### Instalação dentro da VM
+
 Após entrar por SSH, obtenha o repositório e execute o helper no servidor:
 
 ```bash

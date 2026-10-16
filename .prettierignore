@@ -9,3 +9,4 @@ release
 desktop/*.c
 desktop/*.nsi
 desktop/*.txt
+__pycache__

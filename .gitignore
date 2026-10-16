@@ -14,3 +14,4 @@ release/
 *.sqlite-*
 *.pem
 *.key
+__pycache__/
