@@ -25,14 +25,35 @@ class AccessError(Exception):
 
 
 def oci(*arguments, allow_empty_list=False, allow_empty_response=False):
+    command = []
+    for argument in arguments:
+        if argument.startswith('--'):
+            break
+        command.append(argument)
+    label = ' '.join(command)
     result = subprocess.run(
         ['oci', *arguments, '--output', 'json'],
         text=True, capture_output=True, timeout=120,
     )
     if result.returncode:
         # No private key or credential value is supplied to the OCI CLI.
-        raise AccessError('A OCI recusou o comando: ' + result.stderr.strip()[:1400])
-    label = ' '.join(arguments[:3])
+        detail = result.stderr.strip()[:1400]
+        if not detail:
+            # Standard output can contain resource metadata. Only an explicit
+            # service error message may be included in the diagnostic.
+            output = result.stdout.strip()
+            if output.startswith('ServiceError:'):
+                output = output[len('ServiceError:'):].strip()
+            try:
+                error = json.loads(output)
+            except json.JSONDecodeError:
+                error = {}
+            if isinstance(error, dict) and 'code' in error and 'message' in error and 'data' not in error:
+                detail = str(error['code']) + ': ' + str(error['message'])[:1000]
+        if not detail:
+            detail = 'A CLI terminou sem mensagem de erro; nenhuma resposta de recurso foi exibida.'
+        status = f'sinal {-result.returncode}' if result.returncode < 0 else f'codigo {result.returncode}'
+        raise AccessError(f'Falha em "oci {label}" ({status}): {detail}')
     output = result.stdout.strip()
     if not output:
         # Some OCI CLI list commands print nothing when there are no resources.

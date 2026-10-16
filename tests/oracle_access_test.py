@@ -18,6 +18,21 @@ VNIC = 'ocid1.vnic.oc1.sa-saopaulo-1.testvnic'
 
 
 class OracleAccessTests(unittest.TestCase):
+    def test_oci_failure_reports_command_and_exit_status_without_dumping_metadata(self):
+        cases = [(-9, '', 'sinal 9'),
+                 (1, '{"data":{"private-content":"do-not-print"}}', 'codigo 1'),
+                 (1, 'ServiceError: {"code":"NotAuthorizedOrNotFound","message":"Resource missing"}',
+                  'NotAuthorizedOrNotFound')]
+        for status, output, expected in cases:
+            with self.subTest(status=status, output=output), patch.object(
+                ACCESS.subprocess, 'run', return_value=subprocess.CompletedProcess([], status, output, '')
+            ):
+                with self.assertRaises(ACCESS.AccessError) as error:
+                    ACCESS.oci('network', 'vnic', 'get', '--vnic-id', VNIC)
+                self.assertIn('oci network vnic get', str(error.exception))
+                self.assertIn(expected, str(error.exception))
+                self.assertNotIn('do-not-print', str(error.exception))
+
     def test_session_is_not_reused_after_an_allowlist_or_source_change(self):
         saved = {'bastion': 'b', 'key': 'fingerprint', 'source-cidr': '1.1.1.1/32'}
         self.assertTrue(ACCESS.can_reuse_session(saved, 'b', 'fingerprint', '1.1.1.1/32', False))
