@@ -4,6 +4,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -92,7 +93,7 @@ class OracleAccessTests(unittest.TestCase):
     def test_ssh_command_checks_identity_and_does_not_include_private_contents(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory) / 'key folder'
-            key = folder / 'id_ed25519'
+            key = folder / 'id_rsa_3072'
             command = ACCESS.ssh_arguments(key, folder, 'ocid1.bastionsession.oc1.sa-saopaulo-1.session',
                                            'sa-saopaulo-1', '10.0.0.3')
             self.assertEqual(command[-1], 'ubuntu@10.0.0.3')
@@ -101,6 +102,22 @@ class OracleAccessTests(unittest.TestCase):
             self.assertIn("'" + str(key) + "'", ' '.join(command))
             with self.assertRaises(ACCESS.AccessError):
                 ACCESS.ssh_arguments(key, folder, 'session;whoami', 'sa-saopaulo-1', '10.0.0.3')
+
+    def test_rsa_key_generation_and_reuse_leave_older_key_untouched(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            older = folder / 'id_ed25519'
+            older.write_bytes(b'existing key must remain untouched')
+            key, public, derived = ACCESS.prepare_key(folder)
+            original = key.read_bytes()
+            self.assertEqual(derived.split()[0], b'ssh-rsa')
+            bits = subprocess.check_output(['ssh-keygen', '-l', '-f', str(public)], text=True).split()[0]
+            self.assertEqual(int(bits), 3072)
+            self.assertEqual(key.stat().st_mode & 0o777, 0o600)
+            repeated = ACCESS.prepare_key(folder)
+            self.assertEqual(repeated[2], derived)
+            self.assertEqual(key.read_bytes(), original)
+            self.assertEqual(older.read_bytes(), b'existing key must remain untouched')
 
 
 if __name__ == '__main__':

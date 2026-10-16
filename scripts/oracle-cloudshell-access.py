@@ -131,6 +131,21 @@ def ssh_arguments(key, directory, session_id, region, address):
             '-o', 'ProxyCommand=' + proxy, '-p', '22', 'ubuntu@' + address]
 
 
+def prepare_key(directory):
+    # Cloud Shell can enforce FIPS: use RSA and keep any older ED25519 key intact.
+    key = directory / 'id_rsa_3072'
+    if not key.exists():
+        subprocess.run(['ssh-keygen', '-q', '-t', 'rsa', '-b', '3072', '-N', '',
+                        '-C', 'orbita-cloudshell', '-f', str(key)], check=True)
+    key.chmod(0o600)
+    derived = subprocess.check_output(['ssh-keygen', '-y', '-f', str(key)])
+    if derived.split()[0] != b'ssh-rsa':
+        raise AccessError('A chave existente id_rsa_3072 nao e RSA. Nenhuma chave foi substituida.')
+    public = directory / 'id_rsa_3072.pub'
+    public.write_bytes(derived)
+    return key, public, derived
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('resource_id', help='OCID da instancia (ocid1.instance.) ou VNIC (ocid1.vnic.).')
@@ -165,13 +180,7 @@ def main():
     directory = Path.home() / '.ssh' / ('orbita-' + hashlib.sha256(instance_id.encode()).hexdigest()[:12])
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     directory.chmod(0o700)
-    key = directory / 'id_ed25519'
-    if not key.exists():
-        subprocess.run(['ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-C', 'orbita-cloudshell', '-f', str(key)], check=True)
-    key.chmod(0o600)
-    derived = subprocess.check_output(['ssh-keygen', '-y', '-f', str(key)])
-    public = directory / 'id_ed25519.pub'
-    public.write_bytes(derived)
+    key, public, derived = prepare_key(directory)
     compartment = instance['compartment-id']
     name = directory.name
     bastions = records(oci('bastion', 'bastion', 'list', '--compartment-id', compartment, '--all'))

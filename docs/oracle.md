@@ -35,6 +35,8 @@ Pré-requisitos: imagem Linux com Oracle Cloud Agent e suporte ao plugin Bastion
 
 O helper é preparação de acesso, não uma comprovação de implantação: a consulta e a conexão precisam ser executadas na sua conta Oracle. Ele não instala o Órbita automaticamente. A sessão expira após uma hora; o bastion pode ser removido pelo console quando não for mais necessário.
 
+O helper gera uma chave **RSA de 3072 bits** para funcionar também em Cloud Shell com FIPS habilitado. Ele não desativa FIPS nem altera a política de assinaturas do SSH. Se uma execução anterior falhou ao gerar ED25519, atualize o helper e execute novamente: as chaves antigas são preservadas e a configuração do plugin é reaproveitada.
+
 Verificações locais do helper: `python3 -m unittest discover -s tests -p oracle_access_test.py -v`. Os testes simulam respostas da OCI para verificar a resolução da VNIC, impedir alterações no modo de consulta ou em uma VM com IP diferente, preservar configurações do agent e recusar uma origem mais ampla que `/32`. Esses testes não criam recursos nem comprovam conectividade na sua conta.
 
 ### Instalação dentro da VM
