@@ -18,6 +18,15 @@ VNIC = 'ocid1.vnic.oc1.sa-saopaulo-1.testvnic'
 
 
 class OracleAccessTests(unittest.TestCase):
+    def test_session_is_not_reused_after_an_allowlist_or_source_change(self):
+        saved = {'bastion': 'b', 'key': 'fingerprint', 'source-cidr': '1.1.1.1/32'}
+        self.assertTrue(ACCESS.can_reuse_session(saved, 'b', 'fingerprint', '1.1.1.1/32', False))
+        self.assertFalse(ACCESS.can_reuse_session(saved, 'b', 'fingerprint', '1.1.1.1/32', True))
+        self.assertFalse(ACCESS.can_reuse_session(saved, 'b', 'fingerprint', '2.2.2.2/32', False))
+        self.assertFalse(ACCESS.can_reuse_session(saved, 'b', 'new-key', '1.1.1.1/32', False))
+        self.assertFalse(ACCESS.can_reuse_session({'bastion': 'b', 'key': 'fingerprint'},
+                                                  'b', 'fingerprint', '1.1.1.1/32', False))
+
     def test_empty_oci_lists_are_allowed_only_for_explicit_list_calls(self):
         for output in ['', ' \n', '{"data": null}']:
             result = subprocess.CompletedProcess([], 0, output, '')
@@ -136,6 +145,33 @@ class OracleAccessTests(unittest.TestCase):
             self.assertEqual(repeated[2], derived)
             self.assertEqual(key.read_bytes(), original)
             self.assertEqual(older.read_bytes(), b'existing key must remain untouched')
+
+    def test_diagnostics_only_query_resources_and_run_a_read_only_ssh_command(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            derived = b'ssh-rsa public-test-fixture\n'
+            state = {'bastion': 'bastion-id', 'session': 'ocid1.bastionsession.oc1.sa-saopaulo-1.session',
+                     'key': ACCESS.hashlib.sha256(derived).hexdigest()}
+            (directory / 'session.json').write_text(json.dumps(state))
+            (directory / 'id_rsa_3072').write_bytes(b'not-a-real-key-test-fixture')
+            output = io.StringIO()
+            with patch.object(ACCESS, 'access_directory', return_value=directory), patch.object(
+                ACCESS, 'source_cidr', return_value='1.1.1.1/32'
+            ), patch.object(ACCESS, 'oci', side_effect=[
+                {'id': 'bastion-id', 'lifecycle-state': 'ACTIVE', 'client-cidr-block-allow-list': ['1.1.1.1/32']},
+                {'id': state['session'], 'bastion-id': 'bastion-id', 'lifecycle-state': 'ACTIVE'},
+                [{'name': 'Bastion', 'status': 'RUNNING'}],
+            ]) as client, patch.object(ACCESS.subprocess, 'check_output', return_value=derived), patch.object(
+                ACCESS.subprocess, 'run', return_value=subprocess.CompletedProcess([], 255, '',
+                    'debug1: Offering public key: fixture\nConnection closed by remote host\nexcluded-payload\n')
+            ) as ssh, contextlib.redirect_stdout(output):
+                ACCESS.diagnose_access(INSTANCE, {'compartment-id': 'c'}, {'private-ip': '10.0.0.3'}, 'sa-saopaulo-1')
+            self.assertEqual([call.args[2] for call in client.call_args_list], ['get', 'get', 'list'])
+            self.assertEqual(ssh.call_args.args[0][-1], 'true')
+            self.assertIn('BatchMode=yes', ssh.call_args.args[0])
+            self.assertIn('Connection closed by remote host', output.getvalue())
+            self.assertNotIn('excluded-payload', output.getvalue())
+            self.assertEqual(json.loads((directory / 'session.json').read_text()), state)
 
 
 if __name__ == '__main__':

@@ -140,16 +140,84 @@ def enable_bastion(instance_id, instance):
                                for item in items))
 
 
-def ssh_arguments(key, directory, session_id, region, address):
+def ssh_arguments(key, directory, session_id, region, address, diagnostic=False):
     if not re.fullmatch(r'ocid1\.bastionsession\.[a-zA-Z0-9_.-]+', session_id):
         raise AccessError('A OCI retornou um identificador de sessao inesperado.')
     ipaddress.ip_address(address)
     host = f'host.bastion.{region}.oci.oraclecloud.com'
     common = ['-i', str(key), '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=accept-new',
               '-o', 'UserKnownHostsFile=' + str(directory / 'known_hosts')]
+    if diagnostic:
+        common += ['-v', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=15',
+                   '-o', 'ConnectionAttempts=1']
     proxy = shlex.join(['ssh', *common, '-W', '%h:%p', '-p', '22', session_id + '@' + host])
     return ['ssh', *common, '-o', 'HostKeyAlias=orbita-' + directory.name,
             '-o', 'ProxyCommand=' + proxy, '-p', '22', 'ubuntu@' + address]
+
+
+def access_directory(instance_id):
+    return Path.home() / '.ssh' / ('orbita-' + hashlib.sha256(instance_id.encode()).hexdigest()[:12])
+
+
+def diagnose_access(instance_id, instance, primary, region):
+    directory = access_directory(instance_id)
+    state_file = directory / 'session.json'
+    if not state_file.is_file():
+        raise AccessError('Nao existe cache de sessao neste Cloud Shell. Execute --connect primeiro.')
+    try:
+        saved = json.loads(state_file.read_text())
+    except json.JSONDecodeError:
+        raise AccessError('O cache de sessao esta incompleto. Execute --connect para recupera-lo.') from None
+    if not isinstance(saved, dict) or not saved.get('bastion') or not saved.get('session'):
+        raise AccessError('O cache nao identifica uma sessao. Execute --connect para recupera-lo.')
+    bastion = oci('bastion', 'bastion', 'get', '--bastion-id', saved['bastion'])
+    session = oci('bastion', 'session', 'get', '--session-id', saved['session'])
+    if session.get('bastion-id') != bastion.get('id'):
+        raise AccessError('A sessao em cache nao pertence ao bastion informado.')
+    plugins = records(oci('instance-agent', 'plugin', 'list', '--instanceagent-id', instance_id,
+                          '--compartment-id', instance['compartment-id'], '--all', allow_empty_list=True))
+    plugin = next((item for item in plugins if item.get('name') == 'Bastion'), {})
+    current = source_cidr()
+    allowlist = bastion.get('client-cidr-block-allow-list') or []
+    print('Diagnostico sem criar recursos ou alterar regras:', flush=True)
+    print('Plugin Bastion:', plugin.get('status', 'nao informado'), flush=True)
+    print('Estado do bastion:', bastion.get('lifecycle-state'), flush=True)
+    print('Estado da sessao:', session.get('lifecycle-state'), flush=True)
+    print('Inicio da sessao:', session.get('time-created'), flush=True)
+    print('Duracao da sessao:', session.get('session-ttl-in-seconds'), 'segundos', flush=True)
+    print('IPv4 de saida HTTPS atual:', current, flush=True)
+    print('Origens permitidas no bastion:', ', '.join(allowlist), flush=True)
+    print('IPv4 HTTPS coincide com a regra:', 'sim' if current in allowlist else 'nao', flush=True)
+    print('Origem registrada na sessao em cache:', saved.get('source-cidr', 'nao registrada'), flush=True)
+    print('IP privado de destino:', primary['private-ip'], flush=True)
+    print('IP privado do bastion:', bastion.get('private-endpoint-ip-address', 'nao informado'), flush=True)
+    if session.get('lifecycle-state') != 'ACTIVE':
+        print('A sessao nao esta ativa; nao sera feita tentativa SSH.', flush=True)
+        return
+    key = directory / 'id_rsa_3072'
+    if not key.is_file():
+        raise AccessError('A chave RSA da sessao nao foi encontrada. Nenhuma nova chave foi criada.')
+    derived = subprocess.check_output(['ssh-keygen', '-y', '-f', str(key)])
+    if hashlib.sha256(derived).hexdigest() != saved.get('key'):
+        raise AccessError('A chave local difere da sessao em cache. Execute --connect para criar a sessao correta.')
+    print('Chave local corresponde ao cache da sessao: sim', flush=True)
+    print('Testando autenticacao SSH com o comando remoto true...', flush=True)
+    arguments = ssh_arguments(key, directory, session['id'], region, primary['private-ip'], diagnostic=True)
+    try:
+        result = subprocess.run([*arguments, 'true'], text=True, capture_output=True, timeout=45)
+    except subprocess.TimeoutExpired:
+        raise AccessError('O teste SSH excedeu 45 segundos. Confira a conectividade Bastion -> VM na porta 22.') from None
+    print('Resultado SSH:', result.returncode, flush=True)
+    patterns = ('Connecting to ', 'Remote protocol version', 'Offering public key', 'Server accepts key',
+                'Authenticated to ', 'Authentications that can continue', 'sign_and_send_pubkey',
+                'no mutual', 'no matching', 'Permission denied', 'Connection closed',
+                'closed by remote host', 'kex_exchange_identification', 'connect failed', 'open failed',
+                'administratively prohibited', 'Connection timed out', 'Host key verification failed')
+    selected = [line for line in result.stderr.splitlines() if any(term in line for term in patterns)]
+    for line in selected[-40:]:
+        print(line, flush=True)
+    if result.returncode == 0:
+        print('Autenticacao ate a VM confirmada. Execute --connect para abrir o terminal.', flush=True)
 
 
 def prepare_key(directory):
@@ -167,12 +235,21 @@ def prepare_key(directory):
     return key, public, derived
 
 
+def can_reuse_session(saved, bastion_id, fingerprint, cidr, allowlist_changed):
+    # OCI snapshots the bastion allowlist for each session. Changing the bastion
+    # does not update an existing session, even if its lifecycle state is ACTIVE.
+    return (not allowlist_changed and saved.get('bastion') == bastion_id
+            and saved.get('key') == fingerprint and saved.get('source-cidr') == cidr)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('resource_id', help='OCID da instancia (ocid1.instance.) ou VNIC (ocid1.vnic.).')
     parser.add_argument('--expected-public-ip', help='Confere se a VM tem o IP publico informado.')
     parser.add_argument('--source-cidr', help='Opcional: IPv4 publico do Cloud Shell com /32.')
-    parser.add_argument('--connect', action='store_true', help='Autoriza preparar Bastion e iniciar SSH.')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--connect', action='store_true', help='Autoriza preparar Bastion e iniciar SSH.')
+    mode.add_argument('--diagnose', action='store_true', help='Consulta a sessao existente e testa SSH sem criar recursos.')
     args = parser.parse_args()
     match = re.fullmatch(r'ocid1\.(?:instance|vnic)\.oc1\.([a-z0-9-]+)\.[a-zA-Z0-9.]+', args.resource_id)
     if not match:
@@ -194,13 +271,16 @@ def main():
     if args.expected_public_ip and primary.get('public-ip') != str(ipaddress.ip_address(args.expected_public_ip)):
         raise AccessError('O IP publico da instancia nao coincide com o informado. Nenhuma alteracao foi feita.')
     print('VM encontrada:', instance['display-name'], flush=True)
+    if args.diagnose:
+        diagnose_access(instance_id, instance, primary, match.group(1))
+        return
     if not args.connect:
         print('Modo de consulta: nenhuma chave ou recurso foi criado. Use --connect para preparar o acesso.')
         return
     cidr = source_cidr(args.source_cidr)
     print('Verificando plugin Bastion...', flush=True)
     enable_bastion(instance_id, instance)
-    directory = Path.home() / '.ssh' / ('orbita-' + hashlib.sha256(instance_id.encode()).hexdigest()[:12])
+    directory = access_directory(instance_id)
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     directory.chmod(0o700)
     print('Preparando chave RSA no Cloud Shell...', flush=True)
@@ -225,7 +305,8 @@ def main():
         bastion_id = result['id']
     bastion = wait_for('bastion', lambda: oci('bastion', 'bastion', 'get', '--bastion-id', bastion_id),
                        lambda item: item.get('lifecycle-state') == 'ACTIVE')
-    if bastion.get('client-cidr-block-allow-list') != [cidr]:
+    allowlist_changed = bastion.get('client-cidr-block-allow-list') != [cidr]
+    if allowlist_changed:
         # This helper owns only its specifically named bastion; it never broadens access.
         oci('bastion', 'bastion', 'update', '--bastion-id', bastion_id,
             '--client-cidr-list', json.dumps([cidr]), '--force', allow_empty_response=True)
@@ -242,7 +323,7 @@ def main():
             saved = {}
         if not isinstance(saved, dict):
             saved = {}
-        if saved.get('bastion') == bastion_id and saved.get('key') == fingerprint:
+        if can_reuse_session(saved, bastion_id, fingerprint, cidr, allowlist_changed):
             previous = oci('bastion', 'session', 'get', '--session-id', saved['session'])
             if (previous.get('bastion-id') == bastion_id
                     and previous.get('lifecycle-state') in {'ACTIVE', 'CREATING'}):
@@ -254,7 +335,8 @@ def main():
                       '--target-resource-id', instance_id, '--target-os-username', 'ubuntu',
                       '--target-private-ip', primary['private-ip'], '--target-port', '22', '--session-ttl', '3600')
         temporary = state_file.with_suffix('.tmp')
-        temporary.write_text(json.dumps({'bastion': bastion_id, 'session': session['id'], 'key': fingerprint}))
+        temporary.write_text(json.dumps({'bastion': bastion_id, 'session': session['id'],
+                                         'key': fingerprint, 'source-cidr': cidr}))
         temporary.chmod(0o600)
         temporary.replace(state_file)
     session = wait_for('sessao SSH', lambda: oci('bastion', 'session', 'get', '--session-id', session['id']),

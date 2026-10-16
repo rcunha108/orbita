@@ -37,6 +37,10 @@ O helper é preparação de acesso, não uma comprovação de implantação: a c
 
 O helper gera uma chave **RSA de 3072 bits** para funcionar também em Cloud Shell com FIPS habilitado. Ele não desativa FIPS nem altera a política de assinaturas do SSH. Se uma execução anterior falhou ao gerar ED25519, atualize o helper e execute novamente: as chaves antigas são preservadas e a configuração do plugin é reaproveitada.
 
+Se o Bastion encerrar a conexão, use `--diagnose` no lugar de `--connect`. Esse modo consulta a sessão e a origem permitida, verifica a chave local e executa somente `true` na VM por SSH com logs filtrados. Ele não cria recursos nem altera regras de rede. Não imprime a chave privada. Uma origem HTTPS detectada por `api.ipify.org` não comprova que o tráfego SSH utiliza exatamente a mesma saída; confirme o diagnóstico antes de alterar a allowlist.
+
+A Oracle exige uma nova sessão após mudanças na lista de origens permitidas. O helper registra a origem em cache e deixa de reutilizar sessões quando essa origem ou a allowlist muda. [Referência oficial de problemas de conexão](https://docs.oracle.com/en-us/iaas/Content/Bastion/Tasks/troubleshooting_connect_session_failed.htm).
+
 Verificações locais do helper: `python3 -m unittest discover -s tests -p oracle_access_test.py -v`. Os testes simulam respostas da OCI para verificar a resolução da VNIC, impedir alterações no modo de consulta ou em uma VM com IP diferente, preservar configurações do agent e recusar uma origem mais ampla que `/32`. Esses testes não criam recursos nem comprovam conectividade na sua conta.
 
 ### Instalação dentro da VM
